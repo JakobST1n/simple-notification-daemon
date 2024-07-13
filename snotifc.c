@@ -306,22 +306,22 @@ void curses_display_menu(int c_id) {
 
     printw(" F7");
     attron(COLOR_PAIR(2));
-    printw("Toogle read");
+    printw("Toogle read      ");
     attroff(COLOR_PAIR(2));
 
     printw(" F8");
     attron(COLOR_PAIR(2));
-    printw("Mark all read");
+    printw("Mark all read    ");
     attroff(COLOR_PAIR(2));
 
     printw(" F9");
     attron(COLOR_PAIR(2));
-    printw("Clear");
+    printw("Clear            ");
     attroff(COLOR_PAIR(2));
 
     printw("F10");
     attron(COLOR_PAIR(2));
-    printw("Quit");
+    printw("Quit             ");
     attroff(COLOR_PAIR(2));
 
     chgat(-1, A_NORMAL, 2, NULL);
