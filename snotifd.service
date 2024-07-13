@@ -1,0 +1,13 @@
+[Unit]
+Description=Simple notification daemon
+After=default.target
+
+[Service]
+ExecStart=%h/bin/snotifd
+Restart=on-failure
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+

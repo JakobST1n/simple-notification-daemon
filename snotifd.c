@@ -192,7 +192,8 @@ void reply_to_get_notification_list(DBusMessage* msg, DBusConnection* conn) {
             dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_STRING, &notifs->list[i]->summary);
             dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_STRING, &notifs->list[i]->body);
             dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_UINT32, &notifs->list[i]->time);
-            dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_BOOLEAN, &notifs->list[i]->seen);
+            unsigned int _seen = notifs->list[i]->seen; // Workaround for broken implementation
+            dbus_message_iter_append_basic(&struct_iter, DBUS_TYPE_BOOLEAN, &_seen);
             dbus_message_iter_close_container(&array_iter, &struct_iter);
         }
     }
@@ -269,6 +270,16 @@ void reply_to_set_seen(DBusMessage* msg, DBusConnection* conn) {
     dbus_message_unref(reply);
 }
 
+void reply_to_clear_all(DBusMessage* msg, DBusConnection* conn) {
+    DBusMessage* reply;
+    DBusMessageIter args;
+    notifs_list_clear(notifs);
+    reply = dbus_message_new_method_return(msg);
+    dbus_message_iter_init_append(reply, &args);
+    dbus_connection_send(conn, reply, NULL);
+    dbus_message_unref(reply);
+}
+
 
 void init_dbus(DBusConnection** conn) {
     DBusError err;
@@ -325,6 +336,8 @@ void handle_dbus_message(DBusConnection* conn, DBusMessage* msg) {
         reply_to_get_unseen_count(msg, conn);
     } else if (dbus_message_is_method_call(msg, DBUS_CLIENT_INTERFACE, DBUS_METHOD_SETSEEN)) {
         reply_to_set_seen(msg, conn);
+    } else if (dbus_message_is_method_call(msg, DBUS_CLIENT_INTERFACE, DBUS_METHOD_CLEAR)) {
+        reply_to_clear_all(msg, conn);
     }
 
     dbus_message_unref(msg);

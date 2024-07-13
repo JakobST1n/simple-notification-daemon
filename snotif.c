@@ -72,3 +72,18 @@ void notifs_list_free(struct NotifsList* list) {
     free(list->list);
     free(list);
 }
+
+void notifs_list_clear(struct NotifsList* list) {
+    for (unsigned int i = 0; i < list->element_count; i++) {
+        if (list->list[i]->app_name)
+            free(list->list[i]->app_name);
+        if (list->list[i]->app_icon)
+            free(list->list[i]->app_icon);
+        if (list->list[i]->summary)
+            free(list->list[i]->summary);
+        if (list->list[i]->body)
+            free(list->list[i]->body);
+        free(list->list[i]);
+    }
+    list->element_count = 0;
+}

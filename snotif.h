@@ -12,6 +12,7 @@
 #define  DBUS_METHOD_GETLIST         "GetNotifications"
 #define  DBUS_METHOD_GETUNSEENCOUNT  "GetUnseenCount"
 #define  DBUS_METHOD_SETSEEN         "SetSeen"
+#define  DBUS_METHOD_CLEAR           "ClearAll"
 
 // Curses related constants
 #define CPAIR_SEL 132
@@ -44,5 +45,6 @@ void notifs_list_init(struct NotifsList** list);
 void notifs_list_set(struct NotifsList* list, struct NotifyParams* notif);
 void notifs_list_free(struct NotifsList* list);
 int notifs_list_set_seen(struct NotifsList* list, unsigned int id, bool read);
+void notifs_list_clear(struct NotifsList* list);
 
 #endif

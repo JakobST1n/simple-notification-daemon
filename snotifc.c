@@ -91,6 +91,37 @@ void set_notif_seen(DBusConnection* conn, uint id, bool seen) {
     dbus_message_unref(msg);
 }
 
+void clear_all(DBusConnection* conn) {
+    DBusMessage* msg;
+    DBusMessageIter args;
+    DBusPendingCall* pending;
+
+    msg = dbus_message_new_method_call(
+            DBUS_CLIENT_INTERFACE,
+            DBUS_CLIENT_OBJECT,
+            DBUS_CLIENT_INTERFACE,
+            DBUS_METHOD_CLEAR
+            );
+
+    dbus_message_iter_init_append(msg, &args);
+
+    if (!dbus_connection_send_with_reply(conn, msg, &pending, -1)) {
+        fprintf(stderr, "Out Of Memory!\n");
+        exit(1);
+    }
+    dbus_connection_flush(conn);
+    dbus_message_unref(msg);
+
+    dbus_pending_call_block(pending);
+    msg = dbus_pending_call_steal_reply(pending);
+    if (msg == NULL) {
+        fprintf(stderr, "Reply Null\n"); exit(1);
+    }
+    dbus_pending_call_unref(pending);
+
+    dbus_message_unref(msg);
+}
+
 void print_notification_list(DBusConnection* conn) {
     DBusMessage* msg;
     DBusMessageIter args;
@@ -144,7 +175,6 @@ void print_notification_list(DBusConnection* conn) {
                 dbus_message_iter_get_basic(&struct_iter, &body);
                 dbus_message_iter_next(&struct_iter);
 
-                //printf("Received Struct: { id: %d, app_name: %s, summary: %s, body: %s }\n", id, app_name, summary, body);
                 printf(KITAL"%10s"KNRM" ┃ "KMAG"%s"KNRM"\n", app_name, summary);
 
                 dbus_message_iter_next(&array_iter);
@@ -269,7 +299,12 @@ void curses_init() {
 }
 
 void curses_display_menu(int c_id) {
-    mvprintw(LINES - 1, 0, " F7");
+    mvprintw(LINES - 1, 0, " F2");
+    attron(COLOR_PAIR(2));
+    printw("Show notification");
+    attroff(COLOR_PAIR(2));
+
+    printw(" F7");
     attron(COLOR_PAIR(2));
     printw("Toogle read");
     attroff(COLOR_PAIR(2));
@@ -277,6 +312,11 @@ void curses_display_menu(int c_id) {
     printw(" F8");
     attron(COLOR_PAIR(2));
     printw("Mark all read");
+    attroff(COLOR_PAIR(2));
+
+    printw(" F9");
+    attron(COLOR_PAIR(2));
+    printw("Clear");
     attroff(COLOR_PAIR(2));
 
     printw("F10");
@@ -309,7 +349,7 @@ void curses_display_notifs(struct NotifsList* notifs, int start, int selected) {
     size_t ri;
 
     struct NotifyParams* notif;
-    for (size_t i = 0; i < items; i++) {
+    for (size_t i = start; i < items+start; i++) {
         ri = notifs->element_count - i - 1;
         if (!notifs->list[ri])
             continue;
@@ -324,11 +364,11 @@ void curses_display_notifs(struct NotifsList* notifs, int start, int selected) {
         if (notif->seen) {
             attron(COLOR_PAIR((CPAIR_B + 3) | extra_bits));
             attron(A_ITALIC);
-            mvprintw(i, 0, " %s", time);
+            mvprintw(i-start, 0, " %s", time);
             attroff(A_ITALIC);
             printw(" │ ");
             attron(A_ITALIC);
-            printw("%*s ", w_app_name, notif->app_name);
+            printw("%*s", w_app_name, notif->app_name);
             attroff(A_ITALIC);
             printw(" │ ");
             attron(A_ITALIC);
@@ -336,7 +376,7 @@ void curses_display_notifs(struct NotifsList* notifs, int start, int selected) {
             attroff(A_ITALIC);
         } else {
             attron(A_ITALIC);
-            mvprintw(i, 0, " %s", time);
+            mvprintw(i-start, 0, " %s", time);
             attroff(A_ITALIC);
             printw(" │ ");
             attron(COLOR_PAIR((CPAIR_B + 2) | extra_bits));
@@ -410,17 +450,27 @@ void show_full_notif(int id, struct NotifsList* notifs) {
 
 void curses_handle_input(DBusConnection* conn, int ch, int* start, int* selected, struct NotifsList* notifs) {
     unsigned int id = notifs->element_count - (*selected) - 1;
+    WINDOW* win;
+    WINDOW* progress;
     switch (ch) {
         case KEY_DOWN:
         case 'j':
             if ((*selected) < notifs->element_count-1) {
                 (*selected)++;
+                if ((*selected) + (*start) > LINES-2)  {
+                    (*start)++;
+                    clear();
+                }
             }
             break;
         case KEY_UP:
         case 'k':
             if ((*selected) > 0) {
                 (*selected)--;
+                if ((*selected) < (*start)) {
+                    (*start)--;
+                    clear();
+                }
             }
             break;
         case KEY_ENTER:
@@ -433,11 +483,45 @@ void curses_handle_input(DBusConnection* conn, int ch, int* start, int* selected
             set_notif_seen(conn, id, !(notifs->list[id]->seen));
             break;
         case KEY_F(8):
+            win = newwin(8, 30, (LINES/2)-5, (COLS/2)-15);
+            box(win, 0, 0);
+            wattron(win, COLOR_PAIR(2));
+            mvwprintw(win, 0, 1, "%s", "Working");
+            wattroff(win, COLOR_PAIR(2));
+            mvwprintw(win, 2, 5, "%s", "Marking all as read");
+
+            progress = newwin(3, 28, (LINES/2)-1, (COLS/2)-14);
+            box(progress, 0, 0);
+            mvwprintw(progress, 0, 1, "%s", "Progress");
+
+            wrefresh(win);
+            wrefresh(progress);
+            refresh();
+
+            unsigned int n = notifs->element_count / 25;
             for (size_t i = 0; i < notifs->element_count; i++) {
-                if (notifs->list[id] || !notifs->list[id]->seen) {
+                if (notifs->list[i] && !notifs->list[i]->seen) {
                     set_notif_seen(conn, i, true);
                 }
+                if (i > 0) {
+                    for (unsigned int o = 0; o < i/n; o++) {
+                        wattron(progress, A_REVERSE);
+                        mvwprintw(progress, 1, o + 1, " ");
+                        wattroff(progress, A_REVERSE);
+                    }
+                    wrefresh(progress);
+                    refresh();
+                }
             }
+            werase(progress);
+            wrefresh(progress);
+            delwin(progress);
+            werase(win);
+            wrefresh(win);
+            delwin(win);
+            break;
+        case KEY_F(9):
+            clear_all(conn);
             break;
     }
 }
@@ -466,6 +550,10 @@ void run_tui_client(DBusConnection* conn) {
     setlocale(LC_ALL, "");
     curses_init();
 
+    int last_lines = LINES;
+    int last_cols = COLS;
+    int last_notifs = 0;
+
     struct NotifsList* notifs = NULL;
     notifs_list_init(&notifs);
 
@@ -479,6 +567,23 @@ void run_tui_client(DBusConnection* conn) {
 
         curses_handle_input(conn, ch, &start, &selected, notifs);
         update_notif_list(conn, &notifs, &unread_count);
+
+        bool major_change = 0;
+        if (LINES != last_lines) {
+            last_lines = LINES;
+            major_change = true;
+        }
+        if (COLS != last_cols) {
+            last_cols = COLS;
+            major_change = true;
+        }
+        if (notifs->element_count != last_notifs) {
+            last_notifs = notifs->element_count;
+            major_change = true;
+        }
+        if (major_change)
+            clear();
+
         curses_display_notifs(notifs, start, selected);
         curses_display_menu(unread_count);
         refresh();
