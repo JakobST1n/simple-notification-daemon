@@ -23,7 +23,7 @@ DESCRIPTION
 
        after which you can install it to your user with
 
-              make
+              make install
 
        Then you can run
 
