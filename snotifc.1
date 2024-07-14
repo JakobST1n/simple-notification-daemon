@@ -1,0 +1,75 @@
+.TH SNOTIFC 1 2024-07-14
+.SH name
+Simple notification client
+
+.SH SYNOPSIS
+.B snotifc [subcommand]
+
+.SH DESCRIPTION
+.B snotifc
+
+.SH OPTIONS
+If no subcommand is specified, a curses TUI will be opened, which can live-refresh, and let's you browse notifications.
+
+.SS "Subcommand: ls"
+Print all notifications to console.
+
+.SS "Subcommand: unread \fI<return_string>\fR"
+
+.IP "\fBreturn_string\fR"
+The string that will be printed to standard out if there are unread notifications.
+If there are no unread notifications, nothing will be printed.
+
+.SS "Subcommand: unread-count"
+Print the current number of unread notifications to stdout.
+
+.SH INTERACTIVE COMMANDS
+The following commands are supported while in snotic TUI:
+
+.SS "j, Down"
+Select (highlight) next notification.
+
+.SS "k, Up"
+Select (highlight) previous notification.
+
+.SS "PgUp, PgDn"
+Scroll the notification list up or down one window.
+
+.SS "CTRL-d, CTRL-u"
+Scroll the notification list up or down one half window.
+
+.SS "g"
+Scroll to the top of the notification list.
+
+.SS "G"
+Scroll to the end of the notification list.
+
+.SS "Enter/Return, F2"
+Show details for selected (highlighted) notification.
+
+.SS "F7"
+Toggle the seen status of the curently selected (highlighted) notification.
+
+.SS "F8"
+Mark all notifications as seen.
+
+.SS "F9"
+Clear the notification list, this is not a reversible action, snotifd will delete everything from memory.
+
+.SS "F10, q"
+Exit the tui application.
+
+.SH EXAMPLES
+
+To show a red dot in the tmux status bar if there are unread notifications, something like this can be added to 
+.BR .tmux.conf
+.PP
+.nf
+.RS
+set -g status-right "%d/%m/%y %H:%M:%S#(snotifc unread \\"#[fg=red]⬤#[default]\\")"
+.RE
+.fi
+.PP
+
+.SH SEE ALSO
+snotifd(1)

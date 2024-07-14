@@ -1,0 +1,134 @@
+SNOTIFD(1)                  General Commands Manual                 SNOTIFD(1)
+
+name
+       Simple notification daemon
+
+SYNOPSIS
+       snotifd
+
+
+DESCRIPTION
+       snotifd is a simple daemon meant to run per user, which can receive and
+       store  notifications  via  DBus  in  memory.  All notifications will be
+       cleared on restart of the daemon.
+
+       It is a quite straight forward program, you start it, and  it  will  be
+       listening  to  the DBus, the intended way to interact with it is to use
+       snotifc(1) which implements the nesecarry functions to connect via  the
+       snotifd.Notifications DBus-interface.
+
+       It can be built with
+
+              make
+
+       after which you can install it to your user with
+
+              make
+
+       Then you can run
+
+              systemctl --user enable --now snotifd
+
+       to  start  it if you are on a systemd-system.  If not, you can start it
+       with ~/bin/snotifd.  snotifc is installed to ~/bin/snotifc.  Make  sure
+       that is in your path to be able to execute it.
+
+
+SEE ALSO
+       snotifc(1)
+
+                                  2024-07-14                        SNOTIFD(1)
+SNOTIFC(1)                  General Commands Manual                 SNOTIFC(1)
+
+name
+       Simple notification client
+
+
+SYNOPSIS
+       snotifc [subcommand]
+
+
+DESCRIPTION
+       snotifc
+
+
+OPTIONS
+       If  no  subcommand is specified, a curses TUI will be opened, which can
+       live-refresh, and let's you browse notifications.
+
+
+   Subcommand: ls
+       Print all notifications to console.
+
+
+   Subcommand: unread <return_string>
+       return_string
+              The string that will be printed to standard out if there are un‐
+              read notifications.  If there are no unread notifications, noth‐
+              ing will be printed.
+
+
+   Subcommand: unread-count
+       Print the current number of unread notifications to stdout.
+
+
+INTERACTIVE COMMANDS
+       The following commands are supported while in snotic TUI:
+
+
+   j, Down
+       Select (highlight) next notification.
+
+
+   k, Up
+       Select (highlight) previous notification.
+
+
+   PgUp, PgDn
+       Scroll the notification list up or down one window.
+
+
+   CTRL-d, CTRL-u
+       Scroll the notification list up or down one half window.
+
+
+   g
+       Scroll to the top of the notification list.
+
+
+   G
+       Scroll to the end of the notification list.
+
+
+   Enter/Return, F2
+       Show details for selected (highlighted) notification.
+
+
+   F7
+       Toggle the seen status of the curently selected (highlighted) notifica‐
+       tion.
+
+
+   F8
+       Mark all notifications as seen.
+
+
+   F9
+       Clear the notification list, this is not a reversible  action,  snotifd
+       will delete everything from memory.
+
+
+   F10, q
+       Exit the tui application.
+
+
+EXAMPLES
+       To  show a red dot in the tmux status bar if there are unread notifica‐
+       tions, something like this can be added to .tmux.conf
+
+              set -g status-right "%d/%m/%y %H:%M:%S#(snotifc unread \"#[fg=red]â¬¤#[default]\")"
+
+SEE ALSO
+       snotifd(1)
+
+                                  2024-07-14                        SNOTIFC(1)

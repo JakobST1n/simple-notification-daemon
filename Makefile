@@ -6,7 +6,7 @@ DEST =
 
 .PHONY: install clean
 
-all: snotifd snotifc
+all: snotifd snotifc README
 o_files := $(patsubst %.c,%.o,$(wildcard *.c))
 
 %: %.c
@@ -20,6 +20,10 @@ snotifc: ${o_files}
 	${GCC} -o $@ $@.o snotif.o ${CFLAGS} -lncursesw
 	strip snotifc
 
+README: snotifd.1 snotifc.1
+	groff -Tutf8 -mandoc snotifd.1 | sed -e 's/\x1b\[[0-9;]*m//g' > $@
+	groff -Tutf8 -mandoc snotifc.1 | sed -e 's/\x1b\[[0-9;]*m//g' >> $@
+
 install: snotifc snotifd
 	install snotifd ${HOME}/bin/snotifd
 	install snotifc ${HOME}/bin/snotifc
@@ -31,3 +35,4 @@ clean:
 	rm -f *.o
 	rm -f snotifc
 	rm -f snotifd
+	rm -f README

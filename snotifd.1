@@ -1,0 +1,50 @@
+.TH SNOTIFD 1 2024-07-14
+.SH name
+Simple notification daemon
+.SH SYNOPSIS
+.B snotifd
+
+.SH DESCRIPTION
+.B snotifd
+is a simple daemon meant to run per user, which can receive and store notifications via DBus in memory.
+All notifications will be cleared on restart of the daemon.
+
+It is a quite straight forward program, you start it, and it will be listening to the DBus,
+the intended way to interact with it is to use 
+.BR snotifc (1)
+which implements the nesecarry functions to connect via the 
+.BR snotifd.Notifications
+DBus-interface.
+
+It can be built with 
+.PP
+.nf
+.RS
+make
+.RE
+.fi
+.PP
+after which you can install it to your user with
+.PP
+.nf
+.RS
+make
+.RE
+.fi
+.PP
+Then you can run 
+.PP
+.nf
+.RS
+systemctl --user enable --now snotifd
+.RE
+.fi
+.PP
+to start it if you are on a systemd-system.
+If not, you can start it with ~/bin/snotifd.
+.BR snotifc
+is installed to ~/bin/snotifc.
+Make sure that is in your path to be able to execute it.
+
+.SH SEE ALSO
+snotifc(1)
