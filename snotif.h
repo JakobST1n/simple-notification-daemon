@@ -17,6 +17,7 @@
 // Curses related constants
 #define CPAIR_SEL 132
 #define CPAIR_B 4
+#define CTRL(c) ((c) & 037)
 
 // Extended struct from the specification at:
 // https://specifications.freedesktop.org/notification-spec/latest/ar01s09.html

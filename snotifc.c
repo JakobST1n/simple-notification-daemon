@@ -508,9 +508,30 @@ void curses_handle_input(DBusConnection* conn, int ch, int* start, int* selected
                 (*start) = 0;
             clear();
             break;
+        case CTRL('d'):
+            (*selected) += ((LINES - 1) / 2);
+            (*start) += ((LINES - 1) / 2);
+            if ((*selected) >= notifs->element_count)
+                (*selected) = notifs->element_count - 1;
+            if ((*start) >= notifs->element_count - LINES + 1) {
+                (*start) = notifs->element_count - LINES + 1;
+            }
+            if ((*start) < 0)
+                (*start) = 0;
+            clear();
+            break;
         case KEY_PPAGE:
             (*selected) -= (LINES - 1);
             (*start) -= (LINES - 1);
+            if ((*selected) < 0)
+                (*selected) = 0;
+            if ((*start) < 0)
+                (*start) = 0;
+            clear();
+            break;
+        case CTRL('u'):
+            (*selected) -= ((LINES - 1) / 2);
+            (*start) -= ((LINES - 1) / 2);
             if ((*selected) < 0)
                 (*selected) = 0;
             if ((*start) < 0)
