@@ -27,6 +27,8 @@ README: snotifd.1 snotifc.1
 install: snotifc snotifd
 	install snotifd ${HOME}/bin/snotifd
 	install snotifc ${HOME}/bin/snotifc
+	install snotifd.1 ${HOME}/.local/share/man/man1/snotifd.1
+	install snotifc.1 ${HOME}/.local/share/man/man1/snotifc.1
 	mkdir -p ${XDG_CONFIG_HOME}/systemd/user/
 	install snotifd.service ${XDG_CONFIG_HOME}/systemd/user/
 	systemctl --user daemon-reload
