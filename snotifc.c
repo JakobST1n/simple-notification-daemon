@@ -49,6 +49,51 @@ void print_unseen_count(DBusConnection* conn) {
     dbus_message_unref(msg);
 }
 
+void print_arg_if_unseen(DBusConnection* conn, char* arg) {
+    DBusMessage* msg;
+    DBusMessageIter args;
+    DBusPendingCall* pending;
+
+    msg = dbus_message_new_method_call(
+            DBUS_CLIENT_INTERFACE,
+            DBUS_CLIENT_OBJECT,
+            DBUS_CLIENT_INTERFACE,
+            DBUS_METHOD_GETUNSEENCOUNT
+            );
+
+    dbus_message_iter_init_append(msg, &args);
+
+    if (!dbus_connection_send_with_reply(conn, msg, &pending, -1)) {
+        fprintf(stderr, "Out Of Memory!\n");
+        exit(1);
+    }
+
+    dbus_connection_flush(conn);
+    dbus_message_unref(msg);
+
+    dbus_pending_call_block(pending);
+    msg = dbus_pending_call_steal_reply(pending);
+    if (msg == NULL) {
+        fprintf(stderr, "Reply Null\n"); exit(1);
+    }
+    dbus_pending_call_unref(pending);
+
+    unsigned int count;
+    if (!dbus_message_iter_init(msg, &args))
+        fprintf(stderr, "Message has no arguments!\n");
+    else if (DBUS_TYPE_UINT32 != dbus_message_iter_get_arg_type(&args))
+        fprintf(stderr, "Argument is not uint32!\n");
+    else
+        dbus_message_iter_get_basic(&args, &count);
+
+    if (count > 0) {
+        printf("%s", arg);
+        fflush(stdout);
+    }
+
+    dbus_message_unref(msg);
+}
+
 void set_notif_seen(DBusConnection* conn, uint id, bool seen) {
     DBusMessage* msg;
     DBusMessageIter args;
@@ -594,7 +639,11 @@ void run_tui_client(DBusConnection* conn) {
 }
 
 void usage(char **argv) {
-    printf("Usage: %s [unread|ls]\n", argv[0]);
+    printf("Usage: %s <command>\n", argv[0]);
+    printf("Commands:\n");
+    printf("  %s unread <output if unread notifs>\n", argv[0]);
+    printf("  %s unread-count\n", argv[0]);
+    printf("  %s ls\n", argv[0]);
 }
 
 int main(int argc, char **argv) {
@@ -607,13 +656,21 @@ int main(int argc, char **argv) {
     }
 
 #define UNREAD "unread"
+#define UNREAD_COUNT "unread-count"
 #define LS "ls"
 
-    if (!strncmp(argv[1], UNREAD, strlen(UNREAD)))
+    if (!strncmp(argv[1], UNREAD_COUNT, strlen(UNREAD_COUNT)))
         print_unseen_count(conn);
     else if (!strncmp(argv[1], LS, strlen(LS)))
         print_notification_list(conn);
-    else {
+    else if (!strncmp(argv[1], UNREAD, strlen(UNREAD))) {
+        if (argc != 3) {
+            usage(argv);
+            exit(1);
+        }
+        char* arg = argv[2];
+        print_arg_if_unseen(conn, arg);
+    } else {
         usage(argv);
         exit(1);
     }
