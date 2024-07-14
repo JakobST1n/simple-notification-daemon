@@ -389,15 +389,14 @@ void curses_display_notifs(struct NotifsList* notifs, int start, int selected) {
             w_app_name = w;
     }
 
-    const int items = (notifs->element_count > LINES) ? LINES : notifs->element_count;
-    int n_printed = 0;
-    size_t ri;
-
     struct NotifyParams* notif;
-    for (size_t i = start; i < items+start; i++) {
-        ri = notifs->element_count - i - 1;
+    for (size_t i = start; i < LINES-1+start; i++) {
+        if (i >= notifs->element_count)
+            continue;
+        size_t ri = notifs->element_count - 1 - i;
         if (!notifs->list[ri])
             continue;
+
         notif = notifs->list[ri];
 
         char time[10] = "";
@@ -434,7 +433,6 @@ void curses_display_notifs(struct NotifsList* notifs, int start, int selected) {
         attroff(COLOR_PAIR(CPAIR_B | extra_bits));
         chgat(-1, A_NORMAL, CPAIR_B | extra_bits, NULL);
 
-        n_printed++;
     }
 }
 
@@ -498,11 +496,44 @@ void curses_handle_input(DBusConnection* conn, int ch, int* start, int* selected
     WINDOW* win;
     WINDOW* progress;
     switch (ch) {
+        case KEY_NPAGE:
+            (*selected) += (LINES - 1);
+            (*start) += (LINES - 1);
+            if ((*selected) >= notifs->element_count)
+                (*selected) = notifs->element_count - 1;
+            if ((*start) >= notifs->element_count - LINES + 1) {
+                (*start) = notifs->element_count - LINES + 1;
+            }
+            if ((*start) < 0)
+                (*start) = 0;
+            clear();
+            break;
+        case KEY_PPAGE:
+            (*selected) -= (LINES - 1);
+            (*start) -= (LINES - 1);
+            if ((*selected) < 0)
+                (*selected) = 0;
+            if ((*start) < 0)
+                (*start) = 0;
+            clear();
+            break;
+        case 'G':
+            (*selected) = notifs->element_count - 1;
+            (*start) = notifs->element_count - LINES + 1;
+            if ((*start) < 0)
+                (*start) = 0;
+            clear();
+            break;
+        case 'g':
+            (*selected) = 0;
+            (*start) = 0;
+            clear();
+            break;
         case KEY_DOWN:
         case 'j':
-            if ((*selected) < notifs->element_count-1) {
+            if ((*selected) < notifs->element_count - 1) {
                 (*selected)++;
-                if ((*selected) + (*start) > LINES-2)  {
+                if ((*selected) >= (*start) + LINES - 1) {
                     (*start)++;
                     clear();
                 }
