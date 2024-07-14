@@ -1,6 +1,6 @@
 GCC := gcc
 CFLAGS_DBUS := $(shell pkg-config --cflags --libs dbus-1)
-CFLAGS = -g -Wall -O ${CFLAGS_DBUS}
+CFLAGS = -Wall -O ${CFLAGS_DBUS}
 
 DEST =
 
@@ -14,9 +14,11 @@ o_files := $(patsubst %.c,%.o,$(wildcard *.c))
 
 snotifd: ${o_files}
 	${GCC} -o $@ $@.o snotif.o ${CFLAGS}
+	strip snotifd
 
 snotifc: ${o_files}
 	${GCC} -o $@ $@.o snotif.o ${CFLAGS} -lncursesw
+	strip snotifc
 
 install: snotifc snotifd
 	install snotifd ${HOME}/bin/snotifd
